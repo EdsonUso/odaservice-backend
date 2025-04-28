@@ -14,18 +14,25 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode(of = "id")
 public class Vaga {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private Double salario;
+
+    @Column(nullable = false)
     private String setor;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private StatusVaga status;
-    private String nome;
 
+    @Column(nullable = false)
+    private String nome;
 
     @ManyToMany
     @JoinTable(
@@ -33,7 +40,7 @@ public class Vaga {
             joinColumns = @JoinColumn(name = "vaga_id"),
             inverseJoinColumns = @JoinColumn(name = "requisito_id")
     )
-    private Set<Requisito> requisitos;
+    private Set<Requisito> requisitos = new HashSet<>();
 
     @OneToMany(mappedBy = "vaga", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<VagaCandidato> vagaCandidatos = new HashSet<>();

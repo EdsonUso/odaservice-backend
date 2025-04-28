@@ -14,16 +14,22 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode(of = "id")
 public class Candidato {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nome;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
     private String telefone;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Nivel nivel;
 
     @ManyToMany
@@ -32,7 +38,7 @@ public class Candidato {
             joinColumns = @JoinColumn(name = "candidato_id"),
             inverseJoinColumns = @JoinColumn(name = "competencia_id")
     )
-    private Set<Competencia> competencias;
+    private Set<Competencia> competencias = new HashSet<>();
 
     @OneToMany(mappedBy = "candidato", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

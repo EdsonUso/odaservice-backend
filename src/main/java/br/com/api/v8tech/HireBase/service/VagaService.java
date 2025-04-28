@@ -45,10 +45,11 @@ public interface VagaService {
      *
      * Busca vaga por salario
      *
-     * @param salario o salario da vaga a ser buscada
+     * @param minSalario o salario minimo da vaga a ser buscada
+     * @param maxSalario o salario maximo da vaga a ser buscada
      * @return lista de vagas encontradas
      */
-    List<Vaga> buscarVagaPorSalario(Double salario);
+    List<Vaga> buscarVagaPorFaixaSalarial(Double minSalario, Double maxSalario);
 
     /**
      *

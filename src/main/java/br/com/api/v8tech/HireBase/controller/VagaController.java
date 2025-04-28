@@ -5,6 +5,7 @@ import br.com.api.v8tech.HireBase.model.Requisito;
 import br.com.api.v8tech.HireBase.repository.RequisitoRepository;
 import br.com.api.v8tech.HireBase.service.VagaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,32 +27,47 @@ public class VagaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Vaga> buscarVagaPorId(@PathVariable Long id) {
+        if (id == null || id <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
         return vagaService.buscarVagaPorId(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> {
+                    return ResponseEntity.notFound().build();
+                });
     }
 
     @GetMapping
     public ResponseEntity<List<Vaga>> listarVagas() {
-        return ResponseEntity.ok(vagaService.listarVagas());
+        List<Vaga> vagas = vagaService.listarVagas();
+        return ResponseEntity.ok(vagas);
     }
 
     @GetMapping("/buscar-por-setor")
     public ResponseEntity<List<Vaga>> buscarVagasPorSetor(@RequestParam String setor) {
-        List<Vaga> vagas = vagaService.buscaVagasPorSetor(setor);
+        if (setor.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<Vaga> vagas = vagaService.buscaVagasPorSetor(setor.trim());
         return ResponseEntity.ok(vagas);
     }
 
     @GetMapping("/buscar-por-status")
     public ResponseEntity<List<Vaga>> buscarVagaPorStatus(@RequestParam String status) {
-        List<Vaga> vagas = vagaService.buscarVagaPorStatus(status);
+        if (status.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<Vaga> vagas = vagaService.buscarVagaPorStatus(status.trim());
         return ResponseEntity.ok(vagas);
     }
 
     @GetMapping("/buscar-por-requisito")
     public ResponseEntity<List<Vaga>> buscarVagasPorRequisito(@RequestParam String requisito) {
-        Optional<Requisito> requisitoOpt = requisitoRepository.findByNome(requisito);
+        if (requisito.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
 
+        Optional<Requisito> requisitoOpt = requisitoRepository.findByNomeContainingIgnoreCase(requisito.trim());
         if (requisitoOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -61,8 +77,13 @@ public class VagaController {
     }
 
     @GetMapping("/buscar-por-salario")
-    public ResponseEntity<List<Vaga>> buscarVagaPorSalario(@RequestParam Double salario) {
-        List<Vaga> vagas = vagaService.buscarVagaPorSalario(salario);
+    public ResponseEntity<List<Vaga>> buscarVagaPorSalario(
+            @RequestParam Double minSalario,
+            @RequestParam(required = false) Double maxSalario) {
+        if (minSalario == null || minSalario < 0) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<Vaga> vagas = vagaService.buscarVagaPorFaixaSalarial(minSalario, maxSalario);
         return ResponseEntity.ok(vagas);
     }
 
@@ -75,7 +96,10 @@ public class VagaController {
     @PutMapping("/{id}/status")
     public ResponseEntity<Void> atualizarStatusVaga(@PathVariable Long id, @RequestParam String statusVaga) {
         Boolean atualizado = vagaService.atualizarStatusVaga(id, statusVaga);
-        return atualizado ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        if (atualizado) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{vagaId}/candidatos/{candidatoId}/status")
@@ -84,7 +108,10 @@ public class VagaController {
             @PathVariable Long candidatoId,
             @RequestParam String statusCandidatura) {
         Boolean atualizado = vagaService.atualizarStatusCandidatura(vagaId, candidatoId, statusCandidatura);
-        return atualizado ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        if (atualizado) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{vagaId}/candidatos/{candidatoId}/aprovar")
@@ -92,6 +119,15 @@ public class VagaController {
             @PathVariable Long vagaId,
             @PathVariable Long candidatoId) {
         Boolean aprovado = vagaService.aprovarCandidato(vagaId, candidatoId);
-        return aprovado ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        if (aprovado) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro interno: " + ex.getMessage());
     }
 }

@@ -26,31 +26,47 @@ public class CandidatoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Candidato> buscarCandidatoPorId(@PathVariable Long id) {
+        if (id == null || id <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
         return candidatoService.buscarCandidatoPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/buscar-por-nome")
-    public ResponseEntity<List<Candidato>> buscarCandidatoPorNome(@RequestParam String nome) {
-        List<Candidato> candidatos = candidatoService.buscarCandidatosPorNome(nome);
+    public ResponseEntity<List<Candidato>> buscarCandidatoPorNome(
+            @RequestParam String nome) {
+        if (nome.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<Candidato> candidatos = candidatoService.buscarCandidatosPorNome(nome.trim());
         return ResponseEntity.ok(candidatos);
     }
 
     @GetMapping
     public ResponseEntity<List<Candidato>> listarCandidatos() {
-        return ResponseEntity.ok(candidatoService.listarCandidatos());
+        List<Candidato> candidatos = candidatoService.listarCandidatos();
+        return ResponseEntity.ok(candidatos);
     }
 
     @GetMapping("/buscar-por-competencia")
-    public ResponseEntity<List<Candidato>> listarCandidatosPorCompetencia(@RequestParam String especializacao) {
-        Optional<Competencia> especializacaoOpt = competenciaRepository.findByEspecializacao(especializacao);
+    public ResponseEntity<List<Candidato>> listarCandidatosPorCompetencia(
+            @RequestParam String competencia) {
+        System.out.println("COMPETENCIA:" + competencia);
+        if (competencia == null || competencia.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Optional<Competencia> especializacaoOpt = competenciaRepository
+                .findByEspecializacao(competencia.trim());
 
         if (especializacaoOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        List<Candidato> candidatos = candidatoService.buscarCandidatosPorCompetencia(especializacaoOpt.get());
+        List<Candidato> candidatos = candidatoService
+                .buscarCandidatosPorCompetencia(especializacaoOpt.get());
         return ResponseEntity.ok(candidatos);
     }
 }
